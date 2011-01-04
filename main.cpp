@@ -7,10 +7,67 @@
 #pragma comment(lib, "SDLmain.lib")
 
 bool done = false;
+const int number_of_particles = 100;
+const int life_spawn = 1000;
 Uint32 time;
 Uint32 secondTime;
 GLuint texture;
 BYTE myTexture[256 * 256 * 3];
+
+template <typename T>
+struct Vector
+{
+	T x, y;
+};
+
+struct Particle
+{
+	Particle( void ) {}
+	Particle( int _life, Vector<float> _speed, Vector<float> _position )
+	{
+		life = _life;
+		speed = _speed;
+		position = _position;
+	}
+	int life;
+	Vector<float> speed;
+	Vector<float> position;
+};
+
+class ParticleSystem
+{
+#define last_particle particles[sizeParticles]
+public:
+	ParticleSystem( Vector<float> _position ) : sizeParticles(0) { position = _position; }
+	void add( void ) 
+	{
+		last_particle.life = life_spawn;
+		last_particle.speed = speed;
+		last_particle.position = position;
+		++sizeParticles;
+	}
+	void update( void )
+	{
+		for( int i = 0; i < sizeParticles; i++ )
+		{
+			// Update them
+		}
+	}
+	void draw( void )
+	{
+		for( int i = 0; i < sizeParticles; i++ )
+		{
+			// Draw them
+		}
+	}
+
+private:
+	Vector<float> speed;
+	Vector<float> position;
+
+	Particle particles[number_of_particles];
+	int sizeParticles;
+};
 
 
 void Init( void );
@@ -40,19 +97,19 @@ void Init( void )
 	glMaterialfv(GL_FRONT, GL_SHININESS, mat_shininess);
 	glLightfv(GL_LIGHT0, GL_POSITION, light_position);
 
-    //spelar ingen roll vilken ordning de är i
+        //spelar ingen roll vilken ordning de är i
 	glViewport (0, 0, 800, 600);
 	GLfloat global_ambient[] = { 0.2f, 0.2f, 0.2f, 1.0f };
 	glLightModelfv(GL_LIGHT_MODEL_AMBIENT, global_ambient);
-	glShadeModel(GL_SMOOTH);					// Enable Smooth Shading
-	glClearColor(0.0f, 0.0f, 0.0f, 0.5f);					// Black Background
-	glClearDepth(1.0f);						// Depth Buffer Setup
-	glEnable(GL_DEPTH_TEST);						// Enables Depth Testing
+	glShadeModel(GL_SMOOTH);  // Enable Smooth Shading
+	glClearColor(0.0f, 0.0f, 0.0f, 0.5f);  // Black Background
+	glClearDepth(1.0f);  // Depth Buffer Setup
+	glEnable(GL_DEPTH_TEST);  // Enables Depth Testing
 	glEnable(GL_LIGHTING);
 	glEnable(GL_LIGHT0);
 	glEnable(GL_COLOR_MATERIAL);
-	glDepthFunc(GL_LEQUAL);							// The Type Of Depth Testing To Do
-	glHint(GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST);			// Really Nice Perspective Calculations
+	glDepthFunc(GL_LEQUAL);	// The Type Of Depth Testing To Do
+	glHint(GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST); // Really Nice Perspective Calculations
 	
 	glMatrixMode (GL_PROJECTION); //ändrar vilken matrice som blir påverkad
 	glFrustum (-1.0, 1.0, -1.0, 1.0, 1.5, 100.0);
@@ -83,7 +140,7 @@ void Init( void )
 	}
 
 	glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_LINEAR);	// Linear Filtering
-	glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_LINEAR);	// Linear Filterin
+	glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_LINEAR);	// Linear Filtering
 
 	glTexImage2D(GL_TEXTURE_2D, 0, 3, 256, 256, 0, GL_RGB, GL_UNSIGNED_BYTE, &myTexture);
 }
@@ -122,9 +179,9 @@ void Input( void )
 	SDL_Event event;
 	while( SDL_PollEvent(&event) )
 		if(event.key.keysym.sym == SDLK_ESCAPE)
-            done = true;
+			done = true;
 		else if( event.type == SDL_MOUSEBUTTONDOWN && event.button.button == SDL_BUTTON_LEFT )
-            inputMouseLeft = true;
+			inputMouseLeft = true;
 
 	if( inputMouseLeft == true )
 		inputMouseLeft = false;
