@@ -7,7 +7,7 @@
 #pragma comment(lib, "SDLmain.lib")
 
 bool done = false;
-const int number_of_particles = 100;
+const int max_particles = 100;
 const int life_spawn = 1000;
 Uint32 time;
 Uint32 secondTime;
@@ -18,6 +18,11 @@ template <typename T>
 struct Vector
 {
 	T x, y;
+	Vector operator+=(Vector<T> vector)
+	{
+		this->x += vector.x;
+		this->y += vector.y;
+	}
 };
 
 struct Particle
@@ -27,46 +32,59 @@ struct Particle
 	{
 		life = _life;
 		speed = _speed;
-		position = _position;
+		pos = _position;
 	}
 	int life;
 	Vector<float> speed;
-	Vector<float> position;
+	Vector<float> pos;
 };
 
 class ParticleSystem
 {
-#define last_particle particles[sizeParticles]
+#define last_par particles[numParticles]
+#define i_par particles[i]
 public:
-	ParticleSystem( Vector<float> _position ) : sizeParticles(0) { position = _position; }
+	ParticleSystem( Vector<float> _position ) : numParticles(0) { pos = _position; }
 	void add( void ) 
 	{
-		last_particle.life = life_spawn;
-		last_particle.speed = speed;
-		last_particle.position = position;
-		++sizeParticles;
+		last_par.life = life_spawn;
+		last_par.speed = speed;
+		last_par.pos = pos;
+		++numParticles;
 	}
 	void update( void )
 	{
-		for( int i = 0; i < sizeParticles; i++ )
+		for( int i = 0; i < numParticles; i++ )
 		{
-			// Update them
+			i_par.pos += i_par.speed;
+			--i_par.life;
 		}
 	}
 	void draw( void )
 	{
-		for( int i = 0; i < sizeParticles; i++ )
+		for( int i = 0; i < numParticles; i++ )
 		{
-			// Draw them
+ 			glBegin(GL_QUADS);
+				glTexCoord2f(i_par.pos.x + 0.0f, i_par.pos.y + 0.0f);
+				glVertex3f(-0.2f, -0.2f,  0.2f);
+				glTexCoord2f(i_par.pos.x + 1.0f, i_par.pos.y + 0.0f);
+				glVertex3f( 0.2f, -0.2f,  0.2f);
+				glTexCoord2f(i_par.pos.x + 1.0f, i_par.pos.y + 1.0f);
+				glVertex3f( 0.2f,  0.2f,  0.2f);
+				glTexCoord2f(i_par.pos.x + 0.0f, i_par.pos.y + 1.0f);
+				glVertex3f(-0.2f,  0.2f,  0.2f);
+			glEnd();
 		}
 	}
 
 private:
 	Vector<float> speed;
-	Vector<float> position;
+	Vector<float> pos;
 
-	Particle particles[number_of_particles];
-	int sizeParticles;
+	Particle particles[max_particles];
+	int numParticles;
+#undef last_par
+#undef i_par
 };
 
 
