@@ -2,6 +2,7 @@
 #include "SDL/include/SDL.h"
 #include <gl/GL.h>
 #include <gl/GLU.h>
+#include <math.h>
 
 #pragma comment(lib, "SDL.lib")
 #pragma comment(lib, "SDLmain.lib")
@@ -12,16 +13,19 @@ const int life_spawn = 1000;
 Uint32 time;
 Uint32 secondTime;
 GLuint texture;
-BYTE myTexture[256 * 256 * 3];
+BYTE particleTexture[256 * 256 * 3];
 
 template <typename T>
 struct Vector
 {
+	Vector() :x(0), y(0) {}
+	Vector(T _x, T _y) : x(_x), y(_y) {}
 	T x, y;
 	Vector operator+=(Vector<T> vector)
 	{
 		this->x += vector.x;
 		this->y += vector.y;
+		return vector;
 	}
 };
 
@@ -41,38 +45,51 @@ struct Particle
 
 class ParticleSystem
 {
-#define last_par particles[numParticles]
 #define i_par particles[i]
+#define last_par particles[numParticles]
 public:
-	ParticleSystem( Vector<float> _position ) : numParticles(0) { pos = _position; }
-	void add( void ) 
+	ParticleSystem( Vector<float> _position, Vector<float> _speed ) : numParticles(0) 
+	{ pos = _position; speed = _speed; }
+	void Add( void ) 
 	{
+		static float rotation = 0;
 		last_par.life = life_spawn;
-		last_par.speed = speed;
+		last_par.speed.x = cos(rotation) * speed.x;
+		last_par.speed.y = sin(rotation) * speed.y;
 		last_par.pos = pos;
 		++numParticles;
+		if( numParticles >= max_particles )
+			numParticles = 0;
+		++rotation;
 	}
-	void update( void )
+	void Update( void )
 	{
-		for( int i = 0; i < numParticles; i++ )
+		for( int i = 0; i < max_particles; i++ )
 		{
 			i_par.pos += i_par.speed;
 			--i_par.life;
 		}
 	}
-	void draw( void )
+	void Draw( void )
 	{
-		for( int i = 0; i < numParticles; i++ )
+		glBegin(GL_QUADS);
+			glTexCoord2f(0.0f, 0.0f); glVertex3f(-0.2f, -0.2f,  0.2f);  // Bottom Left Of The Texture
+			glTexCoord2f(1.0f, 0.0f); glVertex3f( 0.2f, -0.2f,  0.2f);  // Bottom Right Of The Texture
+			glTexCoord2f(1.0f, 1.0f); glVertex3f( 0.2f,  0.2f,  0.2f);  // Top Right Of The Texture
+			glTexCoord2f(0.0f, 1.0f); glVertex3f(-0.2f,  0.2f,  0.2f);  // Top Left Of The Texture
+		glEnd();
+
+		for( int i = 0; i < max_particles; i++ )
 		{
  			glBegin(GL_QUADS);
-				glTexCoord2f(i_par.pos.x + 0.0f, i_par.pos.y + 0.0f);
-				glVertex3f(-0.2f, -0.2f,  0.2f);
-				glTexCoord2f(i_par.pos.x + 1.0f, i_par.pos.y + 0.0f);
-				glVertex3f( 0.2f, -0.2f,  0.2f);
-				glTexCoord2f(i_par.pos.x + 1.0f, i_par.pos.y + 1.0f);
-				glVertex3f( 0.2f,  0.2f,  0.2f);
-				glTexCoord2f(i_par.pos.x + 0.0f, i_par.pos.y + 1.0f);
-				glVertex3f(-0.2f,  0.2f,  0.2f);
+				glTexCoord2f(0.0f, 0.0f);
+				glVertex3f(i_par.pos.x - 0.2f, i_par.pos.y - 0.2f,  0.2f);
+				glTexCoord2f(1.0f, 0.0f);
+				glVertex3f(i_par.pos.x + 0.2f, i_par.pos.y - 0.2f,  0.2f);
+				glTexCoord2f(1.0f, 1.0f);
+				glVertex3f(i_par.pos.x + 0.2f, i_par.pos.y + 0.2f,  0.2f);
+				glTexCoord2f(0.0f, 1.0f);
+				glVertex3f(i_par.pos.x - 0.2f, i_par.pos.y + 0.2f,  0.2f);
 			glEnd();
 		}
 	}
@@ -85,7 +102,7 @@ private:
 	int numParticles;
 #undef last_par
 #undef i_par
-};
+} particleSystem( Vector<float>(0, 0), Vector<float>(0.1, 0.1) );
 
 
 void Init( void );
@@ -107,8 +124,8 @@ void Init( void )
 	SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
 	SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 32);
 
-	GLfloat mat_specular[] = { 1.0, 1.0, 1.0, 1.0 }; // 1 1 1 1
-	GLfloat mat_shininess[] = { 50.0 }; // 50
+	GLfloat mat_specular[] = { 1.0, 1.0, 1.0, 1.0 };
+	GLfloat mat_shininess[] = { 50.0 };
 	GLfloat light_position[] = { 2.0, 1.0, 1.0, 0.0 };
 
 	glMaterialfv(GL_FRONT, GL_SPECULAR, mat_specular);
@@ -119,19 +136,19 @@ void Init( void )
 	glViewport (0, 0, 800, 600);
 	GLfloat global_ambient[] = { 0.2f, 0.2f, 0.2f, 1.0f };
 	glLightModelfv(GL_LIGHT_MODEL_AMBIENT, global_ambient);
-	glShadeModel(GL_SMOOTH);  // Enable Smooth Shading
-	glClearColor(0.0f, 0.0f, 0.0f, 0.5f);  // Black Background
-	glClearDepth(1.0f);  // Depth Buffer Setup
-	glEnable(GL_DEPTH_TEST);  // Enables Depth Testing
+	glShadeModel(GL_SMOOTH);
+	glClearColor(0.0f, 0.0f, 0.0f, 0.5f);
+	glClearDepth(1.0f);
+	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_LIGHTING);
 	glEnable(GL_LIGHT0);
 	glEnable(GL_COLOR_MATERIAL);
-	glDepthFunc(GL_LEQUAL);	// The Type Of Depth Testing To Do
-	glHint(GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST); // Really Nice Perspective Calculations
+	glDepthFunc(GL_LEQUAL);
+	glHint(GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST);
 	
-	glMatrixMode (GL_PROJECTION); //ändrar vilken matrice som blir påverkad
+	glMatrixMode (GL_PROJECTION);
 	glFrustum (-1.0, 1.0, -1.0, 1.0, 1.5, 100.0);
-	glMatrixMode (GL_MODELVIEW); //ändrar vilken matrice som blir påverkad
+	glMatrixMode (GL_MODELVIEW);
 
 	// 2D
 	glGenTextures( 1, &texture );
@@ -148,19 +165,19 @@ void Init( void )
 
 		// Röd
 		if( j == 0 )
-			myTexture[i] = 250;
+			particleTexture[i] = 250;
 		// Grön
 		if( j == 1 )
-			myTexture[i] = 0;
+			particleTexture[i] = 0;
 		// Blå
 		if( j == 2 )
-			myTexture[i] = 0;
+			particleTexture[i] = 0;
 	}
 
 	glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_LINEAR);	// Linear Filtering
 	glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_LINEAR);	// Linear Filtering
 
-	glTexImage2D(GL_TEXTURE_2D, 0, 3, 256, 256, 0, GL_RGB, GL_UNSIGNED_BYTE, &myTexture);
+	glTexImage2D(GL_TEXTURE_2D, 0, 3, 256, 256, 0, GL_RGB, GL_UNSIGNED_BYTE, &particleTexture);
 }
 
 void Deinit( void )
@@ -207,6 +224,8 @@ void Input( void )
 
 void Update( void )
 {
+	particleSystem.Add();
+	particleSystem.Update();
 }
 
 void Draw( void )
@@ -229,12 +248,7 @@ void Draw( void )
 
 	glTranslatef( -1.0, 1.0, -5.0 );
 
-	glBegin(GL_QUADS);
-		glTexCoord2f(0.0f, 0.0f); glVertex3f(-0.2f, -0.2f,  0.2f);  // Bottom Left Of The Texture
-		glTexCoord2f(1.0f, 0.0f); glVertex3f( 0.2f, -0.2f,  0.2f);  // Bottom Right Of The Texture
-		glTexCoord2f(1.0f, 1.0f); glVertex3f( 0.2f,  0.2f,  0.2f);  // Top Right Of The Texture
-		glTexCoord2f(0.0f, 1.0f); glVertex3f(-0.2f,  0.2f,  0.2f);  // Top Left Of The Texture
-	glEnd();
+	particleSystem.Draw();
 
 	glDisable( GL_TEXTURE_2D );
 	glEnable( GL_LIGHTING );
