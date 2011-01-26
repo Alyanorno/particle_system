@@ -11,7 +11,7 @@
 #pragma comment(lib, "SDLmain.lib")
 
 bool done = false;
-ParticleSystem< 100, Fire > fireParticles;
+ParticleSystem< 1000, Fire > fireParticles;
 
 void Initialize( void );
 void Run( void );
@@ -30,30 +30,19 @@ void Initialize( void )
 
 	SDL_SetVideoMode(800, 600, 0, SDL_OPENGL | SDL_HWSURFACE);
 	SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
-	SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 32);
-	glEnable(GL_DEPTH_TEST);
-
-	GLfloat mat_specular[] = { 1.0, 1.0, 1.0, 1.0 };
-	GLfloat mat_shininess[] = { 50.0 };
-	GLfloat light_position[] = { 2.0, 1.0, 1.0, 0.0 };
-	GLfloat global_ambient[] = { 0.2f, 0.2f, 0.2f, 1.0f };
-
-	glMaterialfv(GL_FRONT, GL_SPECULAR, mat_specular);
-	glMaterialfv(GL_FRONT, GL_SHININESS, mat_shininess);
-	glLightfv(GL_LIGHT0, GL_POSITION, light_position);
-	glLightModelfv(GL_LIGHT_MODEL_AMBIENT, global_ambient);
-	glEnable(GL_LIGHTING);
-	glEnable(GL_LIGHT0);
-	glEnable(GL_COLOR_MATERIAL);
+	
+	glDisable(GL_DEPTH_TEST); 
+	
+	glHint(GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST);
+	glHint(GL_POINT_SMOOTH_HINT,GL_NICEST);
+	
+	glEnable (GL_BLEND);
+	glBlendFunc(GL_SRC_ALPHA,GL_ONE);
 	
 	glEnable( GL_TEXTURE_2D );
-	glShadeModel(GL_SMOOTH);
-	glDepthFunc(GL_LEQUAL);
-	glHint(GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST);
 
 	glViewport (0, 0, 800, 600);
 	glClearColor(0.0f, 0.0f, 0.0f, 0.5f);
-	glClearDepth(1.0f);
 	
 	glMatrixMode (GL_PROJECTION);
 	glFrustum (-1.0, 1.0, -1.0, 1.0, 1.5, 100.0);
@@ -90,12 +79,17 @@ void Run( void )
 
 void Input( void )
 {
+	static bool inputE = false;
+
 	SDL_Event event;
 	while( SDL_PollEvent(&event) )
 		if(event.key.keysym.sym == SDLK_ESCAPE)
 			done = true;
 		else if(event.key.keysym.sym == 'e')
-			fireParticles.Emit( 10 );
+			inputE = inputE ? false: true;
+
+	if( inputE )
+		fireParticles.Emit( 10 );
 }
 
 void Update( void )

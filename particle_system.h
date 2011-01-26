@@ -36,17 +36,17 @@ public:
 
 		glDisable( GL_LIGHTING );
 
-		float modelView[16];
-		glGetFloatv(GL_MODELVIEW_MATRIX , modelView);
+		float view[16];
+		glGetFloatv(GL_MODELVIEW_MATRIX , view);
 
 		for( int i(0); i<3; i++ )
 			for( int j(0); j<3; j++ )
 				if ( i==j )
-					modelView[i*4+j] = 1.0;
+					view[i*4+j] = 1.0;
 				else
-					modelView[i*4+j] = 0.0;
+					view[i*4+j] = 0.0;
 
-		glLoadMatrixf(modelView);
+		glLoadMatrixf(view);
 
 		glTranslatef( 0.0, 0.0, -5.0 );
 		for( int i(0); i < _size; i++ )
