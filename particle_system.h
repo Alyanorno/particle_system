@@ -11,16 +11,22 @@ typedef typename Policy::Particle Particle;
 typedef typename linear_math::Vector<3> Vector;
 public:
 	ParticleSystem() : Policy(), _size(0) {}
-	void Initialize() 
+	void Initialize()
 		{ Policy::Initialize(); }
 	void Clear() { _size = 0 }
-	void Emit( int amount/*, Vector direction*/)
+	void Emit( int amount, Vector direction = Vector( 0, 0, 0 ) )
 	{
 		if( _size + amount > size )
 			amount = size - _size;
 		for( int i(0); i < amount; i++ )
-			_particles[i+_size] = Policy::Create(/*direction*/);
+			_particles[i+_size] = Policy::Create( direction );
 		_size += amount;
+	}
+	void SetPosition( float x, float y, float z )
+	{
+		Policy::startPosition[0] = x;
+		Policy::startPosition[1] = y;
+		Policy::startPosition[2] = z;
 	}
 	void Update() 
 	{
@@ -34,8 +40,6 @@ public:
 	{
 		glPushMatrix();
 
-		glDisable( GL_LIGHTING );
-
 		float view[16];
 		glGetFloatv(GL_MODELVIEW_MATRIX , view);
 
@@ -48,7 +52,7 @@ public:
 
 		glLoadMatrixf(view);
 
-		glTranslatef( 0.0, 0.0, -5.0 );
+		Policy::Prepare();
 		for( int i(0); i < _size; i++ )
 			Policy::Draw( _particles[i] );
 

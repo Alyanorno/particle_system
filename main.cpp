@@ -1,17 +1,20 @@
 #include "particle_system.h"
 #include "fire.h"
+#include "smoke.h"
 #include "vector.h"
 
 #include <Windows.h>
 #include "SDL/include/SDL.h"
 #include <gl/GL.h>
 #include <gl/GLU.h>
+#include <math.h>
 
 #pragma comment(lib, "SDL.lib")
 #pragma comment(lib, "SDLmain.lib")
 
 bool done = false;
-ParticleSystem< 1000, Fire > fireParticles;
+ParticleSystem< 350, Fire > fireParticles;
+ParticleSystem< 200, Smoke > smokeParticles;
 
 void Initialize( void );
 void Run( void );
@@ -26,19 +29,17 @@ int main( int argc, char *argv[])
 
 void Initialize( void )
 {
-	SDL_Init(SDL_INIT_VIDEO);
+	SDL_Init( SDL_INIT_VIDEO );
 
-	SDL_SetVideoMode(800, 600, 0, SDL_OPENGL | SDL_HWSURFACE);
-	SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
+	SDL_SetVideoMode( 800, 600, 0, SDL_OPENGL | SDL_HWSURFACE );
+	SDL_GL_SetAttribute( SDL_GL_DOUBLEBUFFER, 1 );
 	
-	glDisable(GL_DEPTH_TEST); 
+	glDisable( GL_DEPTH_TEST ); 
 	
-	glHint(GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST);
-	glHint(GL_POINT_SMOOTH_HINT,GL_NICEST);
+	glHint( GL_POINT_SMOOTH_HINT,GL_NICEST );
+	glHint( GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST );
 	
-	glEnable (GL_BLEND);
-	glBlendFunc(GL_SRC_ALPHA,GL_ONE);
-	
+	glEnable( GL_BLEND );
 	glEnable( GL_TEXTURE_2D );
 
 	glViewport (0, 0, 800, 600);
@@ -49,6 +50,7 @@ void Initialize( void )
 	glMatrixMode (GL_MODELVIEW);
 
 	fireParticles.Initialize();
+	smokeParticles.Initialize();
 }
 
 void Deinit( void )
@@ -79,22 +81,19 @@ void Run( void )
 
 void Input( void )
 {
-	static bool inputE = false;
-
 	SDL_Event event;
 	while( SDL_PollEvent(&event) )
 		if(event.key.keysym.sym == SDLK_ESCAPE)
 			done = true;
-		else if(event.key.keysym.sym == 'e')
-			inputE = inputE ? false: true;
 
-	if( inputE )
-		fireParticles.Emit( 10 );
+	fireParticles.Emit( 5, linear_math::Vector<3>( 0, 25, 0 ) );
+	smokeParticles.Emit( 1, linear_math::Vector<3>( 0, 20, 0 ) );
 }
 
 void Update( void )
 {
 	fireParticles.Update();
+	smokeParticles.Update();
 }
 
 void Draw( void )
@@ -103,6 +102,9 @@ void Draw( void )
 
 	glLoadIdentity();
 
+	glTranslatef( 0.0, 0.0, -3.0 );
+	
+	smokeParticles.Draw();
 	fireParticles.Draw();
 
 	SDL_GL_SwapBuffers();
